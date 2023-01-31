@@ -75,7 +75,7 @@
       
       // GAS 部署為網路應用程式後取得的 URL
       var uriGAS = 'https://script.google.com/macros/s/AKfycbzblAlMARuLs9qmlCUWXCUb9SfefKdeJh7Uk-djLRYwzi2xBhkdn7W4PTbuVmM92-Ko9A/exec';
-      
+
       // 取 ip
       var ip;
       fetch(uriIP)
@@ -96,33 +96,33 @@
       
       // 方法 1：reCAPTCHA 送到後端做驗證
       function verifyCallback(token) {
-      
+        window.alert(token)
         var formData = new FormData();
         formData.append('token', token);
         formData.append('ip', ip);
       
-        fetch(uriGAS, {
-          method: "POST",
-          body: formData
-        }).then(response => response.json())
-          .then(result => {
-            if(result.success) {
-              // 分數大過 0.5，才當作是真實人類操作
-              if(result.score > 0.5) {
-                window.alert('你是真人')
-                console.log(token)
-              }
-              // 分數低於 0.5，當作機器人
-              else {
-                window.alert('逼逼逼機油好難喝')
-              }
-            } else {
-              window.alert(result['error-codes'][0])
-            }
-          })
-          .catch(err => {
-            window.alert(err)
-          })
+//         fetch(uriGAS, {
+//           method: "POST",
+//           body: formData
+//         }).then(response => response.json())
+//           .then(result => {
+//             if(result.success) {
+//               // 分數大過 0.5，才當作是真實人類操作
+//               if(result.score > 0.5) {
+//                 window.alert('你是真人')
+//                 console.log(token)
+//               }
+//               // 分數低於 0.5，當作機器人
+//               else {
+//                 window.alert('逼逼逼機油好難喝')
+//               }
+//             } else {
+//               window.alert(result['error-codes'][0])
+//             }
+//           })
+//           .catch(err => {
+//             window.alert(err)
+//           })
       }
     </script>
   </body>
