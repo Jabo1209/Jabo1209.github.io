@@ -97,6 +97,7 @@
       // 方法 1：reCAPTCHA 送到後端做驗證
       function verifyCallback(token) {
         window.alert(token)
+        console.log(token)
         var formData = new FormData();
         formData.append('token', token);
         formData.append('ip', ip);
@@ -110,7 +111,6 @@
 //               // 分數大過 0.5，才當作是真實人類操作
 //               if(result.score > 0.5) {
 //                 window.alert('你是真人')
-//                 console.log(token)
 //               }
 //               // 分數低於 0.5，當作機器人
 //               else {
