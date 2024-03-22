@@ -8,29 +8,29 @@
   body {
     display: flex;
     justify-content: center;
-    align-items: center; /* 将align-items改为center，使下拉菜单垂直居中 */
+    align-items: center; /* 將align-items改為center，使下拉菜單垂直居中 */
     height: 100vh;
-    margin: 0; /* 将margin设置为0 */
-    background-color: #000; /* 设置背景颜色为黑色 */
-    color: #fff; /* 设置文本颜色为白色 */
+    margin: 0; /* 將margin設置為0 */
+    background-color: #000; /* 設置背景顏色為黑色 */
+    color: #fff; /* 設置文本顏色為白色 */
   }
   #resolutionContainer {
     position: relative;
-    margin-top: 200px; /* 向下移动内容 */
-    text-align: center; /* 让内部元素居中对齐 */
+    margin-top: 200px; /* 向下移動內容 */
+    text-align: center; /* 讓內部元素居中對齊 */
   }
   #resolutionImages {
     position: absolute;
-    top: -400px; /* 调整图片距离下拉菜单的上边距 */
-    left: 50%; /* 使图片水平居中 */
+    top: -400px; /* 調整圖片距離下拉菜單的上邊距 */
+    left: 50%; /* 使圖片水平居中 */
     transform: translateX(-50%); /* 水平居中 */
   }
   #resolutionImages img {
-    width: 500px; /* 调整图片的宽度 */
-    display: none; /* 默认隐藏所有图片 */
+    width: 500px; /* 調整圖片的寬度 */
+    display: none; /* 默認隱藏所有圖片 */
   }
   #resolution {
-    margin-top: 200px; /* 调整下拉菜单与图片的间距 */
+    margin-top: 200px; /* 調整下拉菜單與圖片的間距 */
   }
 </style>
 </head>
@@ -59,17 +59,17 @@ var currentSlide = 1;
 
 function updateImage() {
   var resolution = document.getElementById('resolution').value;
-  // 获取所有图片元素
+  // 獲取所有圖片元素
   var images = document.getElementById('resolutionImages').getElementsByTagName('img');
-  // 隐藏所有图片
+  // 隱藏所有圖片
   for (var i = 0; i < images.length; i++) {
     images[i].style.display = 'none';
   }
-  // 如果选择了分辨率，则根据选择的分辨率显示相应的图片
+  // 如果選擇了分辨率，則根據選擇的分辨率顯示相應的圖片
   if (resolution) {
-    stopSlideshow(); // 停止自动播放
+    stopSlideshow(); // 停止自動播放
     if (resolution === '4k') {
-      // 显示4K第一张图片并启动自动播放
+      // 顯示4K第一張圖片並啟動自動播放
       document.getElementById('img4k1').style.display = 'inline-block';
       startSlideshow();
     } else {
@@ -82,15 +82,15 @@ function updateImage() {
 
 function startSlideshow() {
   slideshowInterval = setInterval(function() {
-    // 隐藏当前显示的图片
+    // 隱藏當前顯示的圖片
     document.getElementById('img4k' + currentSlide).style.display = 'none';
-    // 显示下一张图片
+    // 顯示下一張圖片
     currentSlide++;
     if (currentSlide > 4) {
       currentSlide = 1;
     }
     document.getElementById('img4k' + currentSlide).style.display = 'inline-block';
-  }, 1000); // 每1秒切换一次图片
+  }, 1000); // 每1秒切換一次圖片
 }
 
 function stopSlideshow() {
