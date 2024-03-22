@@ -46,7 +46,7 @@
     <img id="img4k4" src="catlove4.jpg" alt="4K4">
   </div>
   <select id="resolution" onchange="updateImage()">
-    <option value="">請選擇</option> <!-- 添加提示文本 -->
+    <option value="0P">請選擇</option> <!-- 添加提示文本 -->
     <option value="144p">144P</option>
     <option value="720p">720P</option>
     <option value="4k">4K</option>
@@ -59,26 +59,24 @@ var currentSlide = 1;
 
 function updateImage() {
   var resolution = document.getElementById('resolution').value;
+  // 獲取所有圖片元素
+  var images = document.getElementById('resolutionImages').getElementsByTagName('img');
+  // 隱藏所有圖片
+  for (var i = 0; i < images.length; i++) {
+    images[i].style.display = 'none';
+  }
   // 如果選擇了分辨率，則根據選擇的分辨率顯示相應的圖片
   if (resolution) {
-    // 隱藏4K圖片並停止自動播放
     stopSlideshow(); // 停止自動播放
     if (resolution === '4k') {
       // 顯示4K第一張圖片並啟動自動播放
       document.getElementById('img4k1').style.display = 'inline-block';
       startSlideshow();
+    } else if (resolution === '0P'){
+      document.getElementById('resolutionImages').getElementsByTagName('img').style.display = 'none'
     } else {
-      document.getElementById('resolutionImages').getElementsByTagName('img').forEach(function(img) {
-        img.style.display = 'none';
-      });
       document.getElementById('img' + resolution).style.display = 'inline-block';
     }
-  } else {
-    // 隱藏所有圖片並停止自動播放
-    stopSlideshow();
-    document.getElementById('resolutionImages').getElementsByTagName('img').forEach(function(img) {
-      img.style.display = 'none';
-    });
   }
   
   console.log("Selected Resolution: " + resolution);
