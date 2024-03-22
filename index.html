@@ -1,12 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Page Title</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resolution Selector</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* 将align-items改为center，使下拉菜单垂直居中 */
+    height: 100vh;
+    margin: 0; /* 将margin设置为0 */
+    background-color: #000; /* 设置背景颜色为黑色 */
+    color: #fff; /* 设置文本颜色为白色 */
+  }
+  #resolutionContainer {
+    position: relative;
+    margin-top: 200px; /* 向下移动内容 */
+    text-align: center; /* 让内部元素居中对齐 */
+  }
+  #resolutionImages {
+    position: absolute;
+    top: -400px; /* 调整图片距离下拉菜单的上边距 */
+    left: 50%; /* 使图片水平居中 */
+    transform: translateX(-50%); /* 水平居中 */
+  }
+  #resolutionImages img {
+    width: 500px; /* 调整图片的宽度 */
+    display: none; /* 默认隐藏所有图片 */
+  }
+  #resolution {
+    margin-top: 200px; /* 调整下拉菜单与图片的间距 */
+  }
+</style>
 </head>
 <body>
 
-<h1>This is a Heading</h1>
-<p>This is a paragraph.</p>
+<div id="resolutionContainer">
+  <div id="resolutionImages">
+    <img id="img144p" src="144P.png" alt="144P">
+    <img id="img720p" src="720P.png" alt="720P">
+    <img id="img4k1" src="catlove1.jpg" alt="4K1">
+    <img id="img4k2" src="catlove2.jpg" alt="4K2">
+    <img id="img4k3" src="catlove3.jpg" alt="4K3">
+    <img id="img4k4" src="catlove4.jpg" alt="4K4">
+  </div>
+  <select id="resolution" onchange="updateImage()">
+    <option value="">請選擇</option> <!-- 添加提示文本 -->
+    <option value="144p">144P</option>
+    <option value="720p">720P</option>
+    <option value="4k">4K</option>
+  </select>
+</div>
+
+<script>
+var slideshowInterval;
+var currentSlide = 1;
+
+function updateImage() {
+  var resolution = document.getElementById('resolution').value;
+  // 获取所有图片元素
+  var images = document.getElementById('resolutionImages').getElementsByTagName('img');
+  // 隐藏所有图片
+  for (var i = 0; i < images.length; i++) {
+    images[i].style.display = 'none';
+  }
+  // 如果选择了分辨率，则根据选择的分辨率显示相应的图片
+  if (resolution) {
+    stopSlideshow(); // 停止自动播放
+    if (resolution === '4k') {
+      // 显示4K第一张图片并启动自动播放
+      document.getElementById('img4k1').style.display = 'inline-block';
+      startSlideshow();
+    } else {
+      document.getElementById('img' + resolution).style.display = 'inline-block';
+    }
+  }
+  
+  console.log("Selected Resolution: " + resolution);
+}
+
+function startSlideshow() {
+  slideshowInterval = setInterval(function() {
+    // 隐藏当前显示的图片
+    document.getElementById('img4k' + currentSlide).style.display = 'none';
+    // 显示下一张图片
+    currentSlide++;
+    if (currentSlide > 4) {
+      currentSlide = 1;
+    }
+    document.getElementById('img4k' + currentSlide).style.display = 'inline-block';
+  }, 1000); // 每1秒切换一次图片
+}
+
+function stopSlideshow() {
+  clearInterval(slideshowInterval);
+}
+</script>
 
 </body>
 </html>
