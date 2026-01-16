@@ -2,49 +2,42 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Lab Meeting</title>
+    <title>Lab Meeting 排班系統</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --primary: #2c3e50; --bg: #f4f7f6; --cell-height: 75px; }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 1150px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        
         .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .button-group { display: flex; gap: 8px; align-items: center; }
-        
-        button { padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; border: 1px solid #ccc; }
+        button { padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; border: 1px solid #ccc; transition: 0.2s; }
+        button:hover { opacity: 0.8; }
         .btn-img { background: #27ae60; color: white; border: none; }
         .btn-save { background: #34495e; color: white; border: none; }
         .btn-edit { background: #e67e22; color: white; border: none; }
-        
-        /* 學生選擇區 */
-        .student-selector { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; padding: 12px; background: #eef2f3; border-radius: 8px; border: 1px dashed #ccc; }
-        .stu-btn { border: 2px solid #ccc; background: white; border-radius: 20px; padding: 6px 15px; cursor: pointer; position: relative; }
+        .student-selector { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; padding: 12px; background: #eef2f3; border-radius: 8px; border: 1px dashed #ccc; min-height: 50px; }
+        .stu-btn { border: 2px solid #ccc; background: white; border-radius: 20px; padding: 6px 15px; cursor: pointer; }
         .stu-btn.active { background: #3498db; color: white; border-color: #2980b9; }
-        .del-stu { color: #ff4757; margin-left: 8px; font-size: 14px; cursor: pointer; }
-
-        /* 編輯名單彈窗樣式 */
+        .del-stu { color: #ff4757; margin-left: 8px; font-weight: bold; }
         #editSection { display: none; background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeeba; text-align: center; }
         #newStuName { padding: 8px; border-radius: 4px; border: 1px solid #ccc; width: 150px; }
-
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { border: 1px solid #ddd; text-align: center; vertical-align: top; padding: 5px; }
         th { background: #f8f9fa; height: 40px; }
         .time-col { background: #f8f9fa; font-weight: bold; font-size: 0.85em; width: 90px; height: var(--cell-height); }
-        
-        .slot { cursor: pointer; transition: background 0.1s; }
+        .slot { cursor: pointer; }
         .name-tag { display: inline-block; background: #e1f5fe; color: #01579b; padding: 2px 6px; margin: 2px; border-radius: 4px; font-size: 0.8em; border: 1px solid #b3e5fc; }
         .hide-names .name-tag { display: none; }
-
         .level-1 { background-color: #fff5f5 !important; }
         .level-max { background-color: #ffa8a8 !important; }
+        .empty-hint { color: #888; font-style: italic; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header-area">
-        <h2>🔬 Lab Meeting</h2>
+        <h2>🔬 Lab Meeting 排班系統</h2>
         <div class="button-group">
             <label style="font-size: 0.9em; font-weight: bold;">
                 <input type="checkbox" id="showNameToggle" checked onchange="toggleNameDisplay()"> 顯示姓名
@@ -58,19 +51,18 @@
     </div>
 
     <div id="editSection">
-        <input type="text" id="newStuName" placeholder="輸入學生姓名">
+        <input type="text" id="newStuName" placeholder="輸入學生姓名" onkeypress="if(event.keyCode==13) addStudent()">
         <button onclick="addStudent()">➕ 新增成員</button>
-        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">點擊下方名字旁的 × 即可刪除成員</div>
     </div>
     
-    <div class="student-selector" id="studentSelector"></div>
+    <div class="student-selector" id="studentSelector">
+        <span class="empty-hint">目前無成員，請點擊「編輯名單」新增或「匯入備份」讀取檔案</span>
+    </div>
 
     <div id="captureArea" style="background: white; padding: 5px;">
         <table id="mainTable">
             <thead>
-                <tr>
-                    <th>時段</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th>
-                </tr>
+                <tr><th>時段</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th></tr>
             </thead>
             <tbody id="timetableBody"></tbody>
         </table>
@@ -78,22 +70,25 @@
 </div>
 
 <script>
-    // 預設名單
-    let students = ["詹鈞絡", "楊育嘉", "許鋮昱", "王柏人", "張家榕", "莊雅筑", "FAROOK"];
+    let students = []; 
     let scheduleData = {};
-    let currentStudent = students[0];
+    let currentStudent = "";
     let isEditMode = false;
 
-    const sessions = Array.from({length: 13}, (_, i) => ({id: i+1, t: `${8+i}:10`}));
+    const sessions = Array.from({length: 13}, (_, i) => ({id: i+1}));
 
     function init() {
         renderStudentBtns();
         renderTable();
     }
 
-    // 渲染學生按鈕
     function renderStudentBtns() {
         const selector = document.getElementById('studentSelector');
+        if (students.length === 0) {
+            selector.innerHTML = '<span class="empty-hint">目前無成員，請點擊「編輯名單」新增或「匯入備份」讀取檔案</span>';
+            return;
+        }
+        
         selector.innerHTML = '';
         students.forEach(name => {
             const btn = document.createElement('button');
@@ -111,29 +106,27 @@
         });
     }
 
-    // 編輯模式切換
     function toggleEditMode() {
         isEditMode = !isEditMode;
         document.getElementById('editSection').style.display = isEditMode ? 'block' : 'none';
         renderStudentBtns();
     }
 
-    // 新增學生
     function addStudent() {
-        const name = document.getElementById('newStuName').value.trim();
+        const nameInput = document.getElementById('newStuName');
+        const name = nameInput.value.trim();
         if (name && !students.includes(name)) {
             students.push(name);
-            document.getElementById('newStuName').value = '';
+            if (!currentStudent) currentStudent = name;
+            nameInput.value = '';
             renderStudentBtns();
         }
     }
 
-    // 刪除學生 (包含清理課表數據)
     function removeStudent(event, name) {
         event.stopPropagation();
-        if (confirm(`確定要刪除 ${name} 嗎？相關課表紀錄也會一併清除。`)) {
+        if (confirm(`確定刪除 ${name}？`)) {
             students = students.filter(s => s !== name);
-            // 清理數據中該學生的名字
             for (let key in scheduleData) {
                 scheduleData[key] = scheduleData[key].filter(s => s !== name);
             }
@@ -175,48 +168,55 @@
     }
 
     function saveToFile() {
-        const fullData = { students, scheduleData }; // 把名單跟課表包在一起存
+        if (students.length === 0) { alert("目前沒有資料可以備份"); return; }
+        const fullData = { students, scheduleData };
         const blob = new Blob([JSON.stringify(fullData, null, 2)], {type: "application/json"});
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = "lab_meeting_full_backup.json";
+        link.download = "lab_meeting_data.json";
         link.click();
     }
 
     function loadFromFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const imported = JSON.parse(e.target.result);
-            
-            // 判斷是否為新版格式 (包含 students 欄位)
-            if (imported.students && imported.scheduleData) {
-                students = imported.students;
-                scheduleData = imported.scheduleData;
-            } else {
-                // 如果是舊版格式，直接把整個物件當成課表數據
-                // 並保留目前的預設名單
-                scheduleData = imported;
-                alert("偵測到舊版數據，已成功匯入課表！");
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                
+                // 核心邏輯：從 JSON 中提取名單並同步到按鈕
+                if (imported.students && Array.isArray(imported.students)) {
+                    students = imported.students; // 直接覆蓋目前名單
+                    scheduleData = imported.scheduleData || {};
+                } else {
+                    // 如果讀取的是舊版格式（只有課表），則從課表中掃描所有人名
+                    scheduleData = imported;
+                    let extractedNames = new Set();
+                    Object.values(scheduleData).forEach(arr => {
+                        if (Array.isArray(arr)) arr.forEach(name => extractedNames.add(name));
+                    });
+                    students = Array.from(extractedNames);
+                    alert("已從課表數據中提取名單！");
+                }
+
+                currentStudent = students[0] || ""; // 自動選取第一個成員
+                renderStudentBtns(); // 立即重新繪製人名按鈕
+                renderTable(); // 立即重新繪製表格內容
+                alert("備份讀取成功，名單已更新！");
+            } catch (err) { 
+                alert("讀取失敗，請確認 JSON 格式。"); 
+                console.error(err);
             }
-            
-            currentStudent = students[0] || "";
-            init(); // 重新初始化介面
-        } catch (err) {
-            alert("讀取失敗：檔案格式不正確或檔案已損壞");
-            console.error(err);
-        }
-        event.target.value = ''; 
-    };
-    reader.readAsText(file);
+            event.target.value = '';
+        };
+        reader.readAsText(file);
     }
 
     function exportImage() {
         html2canvas(document.getElementById('captureArea')).then(canvas => {
             const link = document.createElement('a');
-            link.download = `Schedule.png`;
+            link.download = `Schedule_Export.png`;
             link.href = canvas.toDataURL();
             link.click();
         });
