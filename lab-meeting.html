@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Lab Meeting</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --primary: #2c3e50; --bg: #f4f7f6; --cell-height: 75px; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 1150px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        
+        .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .button-group { display: flex; gap: 8px; align-items: center; }
+        
+        button { padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; border: 1px solid #ccc; }
+        .btn-img { background: #27ae60; color: white; border: none; }
+        .btn-save { background: #34495e; color: white; border: none; }
+        .btn-edit { background: #e67e22; color: white; border: none; }
+        
+        /* 學生選擇區 */
+        .student-selector { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; padding: 12px; background: #eef2f3; border-radius: 8px; border: 1px dashed #ccc; }
+        .stu-btn { border: 2px solid #ccc; background: white; border-radius: 20px; padding: 6px 15px; cursor: pointer; position: relative; }
+        .stu-btn.active { background: #3498db; color: white; border-color: #2980b9; }
+        .del-stu { color: #ff4757; margin-left: 8px; font-size: 14px; cursor: pointer; }
+
+        /* 編輯名單彈窗樣式 */
+        #editSection { display: none; background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeeba; text-align: center; }
+        #newStuName { padding: 8px; border-radius: 4px; border: 1px solid #ccc; width: 150px; }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; text-align: center; vertical-align: top; padding: 5px; }
+        th { background: #f8f9fa; height: 40px; }
+        .time-col { background: #f8f9fa; font-weight: bold; font-size: 0.85em; width: 90px; height: var(--cell-height); }
+        
+        .slot { cursor: pointer; transition: background 0.1s; }
+        .name-tag { display: inline-block; background: #e1f5fe; color: #01579b; padding: 2px 6px; margin: 2px; border-radius: 4px; font-size: 0.8em; border: 1px solid #b3e5fc; }
+        .hide-names .name-tag { display: none; }
+
+        .level-1 { background-color: #fff5f5 !important; }
+        .level-max { background-color: #ffa8a8 !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-area">
+        <h2>🔬 Lab Meeting</h2>
+        <div class="button-group">
+            <label style="font-size: 0.9em; font-weight: bold;">
+                <input type="checkbox" id="showNameToggle" checked onchange="toggleNameDisplay()"> 顯示姓名
+            </label>
+            <button class="btn-edit" onclick="toggleEditMode()">✏️ 編輯名單</button>
+            <button class="btn-img" onclick="exportImage()">📸 下載圖片</button>
+            <button class="btn-save" onclick="saveToFile()">💾 匯出備份</button>
+            <button class="btn-load" onclick="document.getElementById('fileInput').click()">📂 匯入備份</button>
+            <input type="file" id="fileInput" style="display:none" accept=".json" onchange="loadFromFile(event)">
+        </div>
+    </div>
+
+    <div id="editSection">
+        <input type="text" id="newStuName" placeholder="輸入學生姓名">
+        <button onclick="addStudent()">➕ 新增成員</button>
+        <div style="font-size: 0.8em; color: #666; margin-top: 5px;">點擊下方名字旁的 × 即可刪除成員</div>
+    </div>
+    
+    <div class="student-selector" id="studentSelector"></div>
+
+    <div id="captureArea" style="background: white; padding: 5px;">
+        <table id="mainTable">
+            <thead>
+                <tr>
+                    <th>時段</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th>
+                </tr>
+            </thead>
+            <tbody id="timetableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // 預設名單
+    let students = ["詹鈞絡", "楊育嘉", "許鋮昱", "王柏人", "張家榕", "莊雅筑", "FAROOK"];
+    let scheduleData = {};
+    let currentStudent = students[0];
+    let isEditMode = false;
+
+    const sessions = Array.from({length: 13}, (_, i) => ({id: i+1, t: `${8+i}:10`}));
+
+    function init() {
+        renderStudentBtns();
+        renderTable();
+    }
+
+    // 渲染學生按鈕
+    function renderStudentBtns() {
+        const selector = document.getElementById('studentSelector');
+        selector.innerHTML = '';
+        students.forEach(name => {
+            const btn = document.createElement('button');
+            btn.className = 'stu-btn' + (name === currentStudent ? ' active' : '');
+            btn.innerHTML = name + (isEditMode ? `<span class="del-stu" onclick="removeStudent(event, '${name}')">×</span>` : '');
+            
+            if (!isEditMode) {
+                btn.onclick = () => {
+                    document.querySelectorAll('.stu-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentStudent = name;
+                };
+            }
+            selector.appendChild(btn);
+        });
+    }
+
+    // 編輯模式切換
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        document.getElementById('editSection').style.display = isEditMode ? 'block' : 'none';
+        renderStudentBtns();
+    }
+
+    // 新增學生
+    function addStudent() {
+        const name = document.getElementById('newStuName').value.trim();
+        if (name && !students.includes(name)) {
+            students.push(name);
+            document.getElementById('newStuName').value = '';
+            renderStudentBtns();
+        }
+    }
+
+    // 刪除學生 (包含清理課表數據)
+    function removeStudent(event, name) {
+        event.stopPropagation();
+        if (confirm(`確定要刪除 ${name} 嗎？相關課表紀錄也會一併清除。`)) {
+            students = students.filter(s => s !== name);
+            // 清理數據中該學生的名字
+            for (let key in scheduleData) {
+                scheduleData[key] = scheduleData[key].filter(s => s !== name);
+            }
+            if (currentStudent === name) currentStudent = students[0] || "";
+            renderStudentBtns();
+            renderTable();
+        }
+    }
+
+    function toggleNameDisplay() {
+        const table = document.getElementById('mainTable');
+        document.getElementById('showNameToggle').checked ? table.classList.remove('hide-names') : table.classList.add('hide-names');
+    }
+
+    function toggleSlot(day, sid) {
+        if (isEditMode || !currentStudent) return;
+        const key = `${day}-${sid}`;
+        if (!scheduleData[key]) scheduleData[key] = [];
+        const idx = scheduleData[key].indexOf(currentStudent);
+        if (idx > -1) scheduleData[key].splice(idx, 1);
+        else scheduleData[key].push(currentStudent);
+        renderTable();
+    }
+
+    function renderTable() {
+        const body = document.getElementById('timetableBody');
+        body.innerHTML = '';
+        sessions.forEach(s => {
+            let row = `<tr><td class="time-col">第 ${s.id} 節</td>`;
+            for (let d = 1; d <= 5; d++) {
+                const list = scheduleData[`${d}-${s.id}`] || [];
+                let c = list.length >= 4 ? 'level-max' : (list.length >= 1 ? 'level-1' : '');
+                const tags = list.map(n => `<span class="name-tag">${n}</span>`).join('');
+                row += `<td class="slot ${c}" onclick="toggleSlot(${d}, ${s.id})">${tags}</td>`;
+            }
+            row += `</tr>`;
+            body.innerHTML += row;
+        });
+    }
+
+    function saveToFile() {
+        const fullData = { students, scheduleData }; // 把名單跟課表包在一起存
+        const blob = new Blob([JSON.stringify(fullData, null, 2)], {type: "application/json"});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "lab_meeting_full_backup.json";
+        link.click();
+    }
+
+    function loadFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            
+            // 判斷是否為新版格式 (包含 students 欄位)
+            if (imported.students && imported.scheduleData) {
+                students = imported.students;
+                scheduleData = imported.scheduleData;
+            } else {
+                // 如果是舊版格式，直接把整個物件當成課表數據
+                // 並保留目前的預設名單
+                scheduleData = imported;
+                alert("偵測到舊版數據，已成功匯入課表！");
+            }
+            
+            currentStudent = students[0] || "";
+            init(); // 重新初始化介面
+        } catch (err) {
+            alert("讀取失敗：檔案格式不正確或檔案已損壞");
+            console.error(err);
+        }
+        event.target.value = ''; 
+    };
+    reader.readAsText(file);
+    }
+
+    function exportImage() {
+        html2canvas(document.getElementById('captureArea')).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Schedule.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
